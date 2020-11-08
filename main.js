@@ -1,9 +1,10 @@
-const state = {
+let state = {
   board: [],
   boardSize: 10,
   totalBombs: 10,
   bombs:[],
-  grid: document.getElementById('board')
+  grid: document.getElementById('board'),
+  gameOver: false
 }
 
 function createCells(s) {
@@ -98,7 +99,21 @@ function drawBoard(s) {
   }
 }
 
+function resetBoard(s) {
+  for (let i = 0; i < s.boardSize; i++) {
+    for (let j = 0; j < s.boardSize; j++) {
+      let cell = document.querySelector([`[data-row='${i}'][data-col='${j}']`]);
+      cell.style.background = (j + i) % 2 == 0 ? '#ff4538' : '#e03f34';
+      cell.textContent = '';
+    }
+  }
+}
+
 function cellClick(event) {
+  if(state.gameOver) {
+    return;
+  }
+
   let cell = event.target;
   let row = Number(cell.getAttribute('data-row'));
   let col = Number(cell.getAttribute('data-col'));
@@ -108,7 +123,7 @@ function cellClick(event) {
     state.board[row][col].isHidden = false;
 
     if (state.board[row][col].hasBomb) {
-      showBombs(state);
+      lose(state);
     } else if (state.board[row][col].adjBombs > 0) {
       cell.textContent = state.board[row][col].adjBombs;
     } else if (state.board[row][col].adjBombs == 0) {
@@ -135,14 +150,38 @@ function expand(s, row, col) {
   }
 }
 
+function lose(s) {
+  s.gameOver = true;
+  showBombs(s);
+  document.getElementById('restartBtn').style.display = 'block';
+}
+
 function showBombs(s) {
   s.bombs.forEach(bomb => {
     let cell = document.querySelectorAll([`[data-row='${bomb.row}'][data-col='${bomb.col}']`])[0];
-    cell.style.background = 'blue';
-    //cell.textContent = '💣';
+    cell.textContent = '💣';
+    cell.style.background = (bomb.col + bomb.row) % 2 == 0 ? '#ccc' : '#eee';
     document.getElementById('message').textContent = 'You lose';
   });
 }
+
+function resetGame() {
+  state = {
+    board: [],
+    boardSize: 10,
+    totalBombs: 10,
+    bombs:[],
+    grid: document.getElementById('board'),
+    gameOver: false
+  };
+  document.getElementById('restartBtn').style.display = 'none';
+  document.getElementById('message').textContent = '';
+  createCells(state);
+  generateBombs(state);
+  calculateAdjBombs(state);
+  resetBoard(state);
+}
+document.getElementById('restartBtn').addEventListener('click', resetGame);
 
 // Create Cells
 createCells(state);
